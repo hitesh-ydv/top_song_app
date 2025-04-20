@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Top Song Admin</title>
+  <style>
+    body {
+      background: #121212;
+      color: #fff;
+      font-family: sans-serif;
+      padding: 40px;
+      text-align: center;
+    }
+    input, button {
+      padding: 10px 15px;
+      font-size: 16px;
+      margin: 10px;
+      border: none;
+      border-radius: 6px;
+    }
+    input {
+      width: 250px;
+    }
+    button {
+      background-color: #1db954;
+      color: #fff;
+      cursor: pointer;
+    }
+    .response {
+      margin-top: 20px;
+      font-size: 14px;
+      color: #ccc;
+    }
+    .remove-btn {
+      background-color: crimson;
+    }
+    .top-song-preview {
+      margin-top: 30px;
+      border: 1px solid #333;
+      padding: 20px;
+      border-radius: 12px;
+      background: #181818;
+      display: none;
+    }
+    .top-song-preview img {
+      width: 80px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🎵 Top Song Admin Panel</h1>
+
+  <input type="text" id="songIdInput" placeholder="Enter Song ID">
+  <button onclick="submitTopSong()">Set Top Song</button>
+  <button class="remove-btn" onclick="removeTopSong()">Remove Top Song</button>
+
+  <div class="response" id="responseMsg"></div>
+
+  <div class="top-song-preview" id="topSongPreview"></div>
+
+  <script>
+    const API_BASE = "http://localhost:3000";
+
+    async function submitTopSong() {
+      const songId = document.getElementById("songIdInput").value.trim();
+      const msg = document.getElementById("responseMsg");
+
+      if (!songId) return msg.textContent = "Please enter a song ID.";
+
+      const res = await fetch(`${API_BASE}/api/top-song`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topSongId: songId })
+      });
+
+      const data = await res.json();
+      msg.textContent = data.message || "Song updated.";
+      loadTopSong(); // Refresh preview
+    }
+
+    async function removeTopSong() {
+      const res = await fetch(`${API_BASE}/api/top-song`, { method: "DELETE" });
+      const data = await res.json();
+      document.getElementById("responseMsg").textContent = data.message;
+      document.getElementById("topSongPreview").style.display = "none";
+    }
+
+    async function loadTopSong() {
+      const preview = document.getElementById("topSongPreview");
+      preview.style.display = "none";
+
+      try {
+        const res = await fetch(`${API_BASE}/api/top-song`);
+        if (!res.ok) return;
+
+        const { topSongId } = await res.json();
+        const songRes = await fetch(`https://jiosavan-api-with-playlist.vercel.app/api/songs/${topSongId}`);
+        const songData = await songRes.json();
+        const track = songData.data[0];
+
+        preview.innerHTML = `
+          <img src="${track.image[2].url}" />
+          <h3>${track.name}</h3>
+          <p>${track.artists.primary.map(a => a.name).join(', ')}</p>
+          <p>ID: <code>${track.id}</code></p>
+        `;
+        preview.style.display = "block";
+
+      } catch (err) {
+        console.error("Error loading top song:", err);
+      }
+    }
+
+    window.onload = loadTopSong;
+  </script>
+
+</body>
+</html>
