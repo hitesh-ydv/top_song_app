@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <title>Top Song Admin</title>
@@ -11,29 +12,36 @@
       padding: 40px;
       text-align: center;
     }
-    input, button {
+
+    input,
+    button {
       padding: 10px 15px;
       font-size: 16px;
       margin: 10px;
       border: none;
       border-radius: 6px;
     }
+
     input {
       width: 250px;
     }
+
     button {
       background-color: #1db954;
       color: #fff;
       cursor: pointer;
     }
+
     .response {
       margin-top: 20px;
       font-size: 14px;
       color: #ccc;
     }
+
     .remove-btn {
       background-color: crimson;
     }
+
     .top-song-preview {
       margin-top: 30px;
       border: 1px solid #333;
@@ -42,6 +50,7 @@
       background: #181818;
       display: none;
     }
+
     .top-song-preview img {
       width: 80px;
       border-radius: 10px;
@@ -49,6 +58,7 @@
     }
   </style>
 </head>
+
 <body>
 
   <h1>🎵 Top Song Admin Panel</h1>
@@ -60,6 +70,14 @@
   <div class="response" id="responseMsg"></div>
 
   <div class="top-song-preview" id="topSongPreview"></div>
+
+  <h2>🔍 Search Songs</h2>
+  <input type="text" id="searchInput" placeholder="Search by song name or artist">
+  <button onclick="searchSongs()">Search</button>
+
+  <div id="searchResults"
+    style="margin-top: 20px; text-align: left; max-width: 600px; margin-left: auto; margin-right: auto;"></div>
+
 
   <script>
     const API_BASE = "https://top-song-app.onrender.com";
@@ -114,8 +132,59 @@
       }
     }
 
+    async function searchSongs() {
+      const query = document.getElementById("searchInput").value.trim();
+      const resultsContainer = document.getElementById("searchResults");
+      resultsContainer.innerHTML = '';
+
+      if (!query) {
+        resultsContainer.innerHTML = "<p style='color: #aaa;'>Enter a search term.</p>";
+        return;
+      }
+
+      try {
+        const res = await fetch(`https://jiosavan-api-with-playlist.vercel.app/api/search/songs?query=${encodeURIComponent(query)}&limit=10`);
+        const data = await res.json();
+        const songs = data.data.results;
+
+        if (!songs.length) {
+          resultsContainer.innerHTML = "<p style='color: #aaa;'>No songs found.</p>";
+          return;
+        }
+
+        songs.forEach(song => {
+          const songEl = document.createElement("div");
+          songEl.style.borderBottom = "1px solid #333";
+          songEl.style.padding = "10px 0";
+
+          songEl.innerHTML = `
+        <strong>${song.name}</strong><br>
+        <span>${song.artists.primary.map(a => a.name).join(", ")}</span><br>
+        <code>${song.id}</code>
+        <button onclick="copyToClipboard('${song.id}')" style="margin-left: 10px; padding: 5px 10px; font-size: 12px;">Copy ID</button>
+      `;
+
+          resultsContainer.appendChild(songEl);
+        });
+
+      } catch (error) {
+        resultsContainer.innerHTML = "<p style='color: #f55;'>Error fetching songs.</p>";
+        console.error("Search error:", error);
+      }
+    }
+
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        alert("Copied ID: " + text);
+      }, () => {
+        alert("Failed to copy ID.");
+      });
+    }
+
+
     window.onload = loadTopSong;
   </script>
 
 </body>
+
 </html>
